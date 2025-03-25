@@ -16,25 +16,43 @@ using StaticArrays
 using StatsBase
 using UnicodePlots
 
-@enum DataScenario random_scenario torus_scenario
-scenario = torus_scenario
+@enum DataScenario random_scenario torus_scenario hemisphere_scenario
+scenario = hemisphere_scenario
+
+fuzzy_and_back = true
 
 @info "Load in datapoints"
 # Note: A node considers itself a neighbor of distance 0.
 high_dim, input_data, N, k_neighbors = if scenario == random_scenario
+  # Random points in the cube.
   high_dim = 3
   N = 100
   input_data = [SVector{high_dim, Float64}(rand(high_dim)) for _ in 1:N]
   k_neighbors = 8
   high_dim, input_data, N, k_neighbors
 elseif scenario == torus_scenario
+  # Random points on the torus, with replacement.
   m = load("./torus.obj")
   high_dim = 3
-  input_data = [SVector{high_dim, Float64}(p) for p in m.vertex_attributes.position]
-  # Sample 100 points without replacement.
+  input_data =
+    [SVector{high_dim, Float64}(p) for p in m.vertex_attributes.position]
   input_data = sample(input_data, 100; replace=false)
   N = length(input_data)
   k_neighbors = 8
+  high_dim, input_data, N, k_neighbors
+elseif scenario == hemisphere_scenario
+  # Random points on the hemisphere.
+  high_dim = 3
+  N = 1000
+  rand1, rand2 = rand(N), rand(N)
+  thetas = acos.(rand1)
+  phis = 2*pi*rand2
+  xs = sin.(thetas) .* cos.(phis)
+  ys = sin.(thetas) .* sin.(phis)
+  zs = cos.(thetas)
+  k_neighbors = 8
+  input_data =
+    [SVector{high_dim, Float64}(xs[i],ys[i],zs[i]) for i in eachindex(xs)]
   high_dim, input_data, N, k_neighbors
 else
   @error "Unspecified scenario"
@@ -79,7 +97,7 @@ function to_fuzzy_simplicial_set(R)
   end
   T
 end
-T = to_fuzzy_simplicial_set(R)
+T = fuzzy_and_back ? to_fuzzy_simplicial_set(R) : identity(R)
 
 @info "Apply a t-conorm"
 function t_conorm(T)
@@ -99,7 +117,7 @@ function to_metric_space(U)
   end
   dropzeros!(D)
 end
-D = to_metric_space(U)
+D = fuzzy_and_back ? to_metric_space(U) : identity(U)
 
 @info "Find all shortest distances"
 function shortest_paths(D)
@@ -124,6 +142,8 @@ scenario_name = if scenario == random_scenario
   "random"
 elseif scenario == torus_scenario
   "torus"
+elseif scenario == hemisphere_scenario
+  "hemi"
 else
   ""
 end
@@ -133,7 +153,8 @@ colors = map(input_data) do p
   atan(p[1], p[3])
 end
 in_data = reduce(hcat, input_data)
-sct = scatter3d(in_data[1,:], in_data[2,:], in_data[3,:], zcolor=colors, color=:hsv, legend=false, camera=(16,13),
+sct = scatter3d(in_data[1,:], in_data[2,:], in_data[3,:],
+  zcolor=colors, color=:hsv, legend=false, camera=(16,13),
   title="High-dimensional data")
 png(sct, "./$(scenario_name)_highdim_k$(k_neighbors).png")
 sct = scatter(embedding[1,:], embedding[2,:], zcolor=colors, color=:hsv, legend=false,
