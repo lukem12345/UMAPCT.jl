@@ -19,10 +19,19 @@ The torus is an intuitive test case. The phenomena of interest that we want to p
   <img src='./torus_embedding_k8.png' width='400' alt='High-dimensional embedding of the torus'>
 </p>
 
-### Uniformly random data
+### Hemisphere
 
-Uniformly random data are generated. Since it is highly un-structured, artifacts in the embedding shed light on the inherent bias of the algorithm itself.
+1000 points are generated on the hemisphere.
+<p float="left">
+  <img src='./hemi_highdim_k8.png' width='400' alt='High-dimensional embedding of the hemisphere'>
+  <img src='./hemi_embedding_k8.png' width='400' alt='High-dimensional embedding of the hemisphere'>
+</p>
+
+### Cube Interior
+
+Uniformly random data are generated.
 <p float="left">
   <img src='./random_highdim_k8.png' width='400' alt='High-dimensional embedding of random data'>
   <img src='./random_embedding_k8.png' width='400' alt='High-dimensional embedding of random data'>
 </p>
+
